@@ -15,6 +15,7 @@ sys.path.append(str(pathlib.Path().absolute()))
 import tensorflow as tf
 from models import resnet
 import datasets.data as data
+import utils.imgproc as imgproc
 import utils.configuration as conf
 import utils.losses as losses
 import numpy as np
@@ -25,19 +26,19 @@ if __name__ == '__main__' :
     parser = argparse.ArgumentParser(description = "Train a simple mnist model")
     parser.add_argument("-config", type = str, help = "<str> configuration file", required = True)
     parser.add_argument("-name", type=str, help=" name of section in the configuration file", required = True)
-    parser.add_argument("-mode", type=str, choices=['train', 'test'],  help=" train or test", required = False, default = 'train')
+    parser.add_argument("-mode", type=str, choices=['train', 'test', 'predict'],  help=" train, test or predict", required = False, default = 'train')
     parser.add_argument("-save", type= bool,  help=" True to save the model", required = False, default = False)    
     pargs = parser.parse_args()     
     configuration_file = pargs.config
     configuration = conf.ConfigurationFile(configuration_file, pargs.name)                   
     if pargs.mode == 'train' :
         tfr_train_file = os.path.join(configuration.get_data_dir(), "train.tfrecords")
-    if pargs.mode == 'train' or  pargs.mode == 'test':    
+    if pargs.mode == 'train' or  pargs.mode == 'test' or pargs.mode == "predict":    
         tfr_test_file = os.path.join(configuration.get_data_dir(), "test.tfrecords")
     if configuration.use_multithreads() :
         if pargs.mode == 'train' :
             tfr_train_file=[os.path.join(configuration.get_data_dir(), "train_{}.tfrecords".format(idx)) for idx in range(configuration.get_num_threads())]
-        if pargs.mode == 'train' or  pargs.mode == 'test':    
+        if pargs.mode == 'train' or  pargs.mode == 'test' or pargs.mode == "predict":    
             tfr_test_file=[os.path.join(configuration.get_data_dir(), "test_{}.tfrecords".format(idx)) for idx in range(configuration.get_num_threads())]        
     sys.stdout.flush()
         
@@ -118,9 +119,26 @@ if __name__ == '__main__' :
     elif pargs.mode == 'test' :
         model.evaluate(val_dataset,
                        steps = configuration.get_validation_steps(),
-                       callbacks=[tensorboard_callback])                                               
+                       callbacks=[tensorboard_callback])    
+
+    elif pargs.mode == 'predict':
+        filename = input('file :')
+        while(filename != 'end') :
+            target_size = (configuration.get_image_height(), configuration.get_image_width())
+            process_fun = imgproc.process_image
+            image = process_fun(data.read_image(filename, configuration.get_number_of_channels()), target_size )
+            image = image - mean_image
+            image = tf.expand_dims(image, 0)        
+            pred = model.predict(image)
+            pred = pred[0]
+            #softmax to estimate probs
+            pred = np.exp(pred - max(pred))
+            pred = pred / np.sum(pred)            
+            cla = np.argmax(pred)
+            print('{} [{}]'.format(cla, pred[cla]))
+            filename = input('file :')                                           
     #save the model   
     if pargs.save :
         saved_to = os.path.join(configuration.get_data_dir(),"cnn-model")
         model.save(saved_to)
-        print("model saved to {}".format(saved_to))                    
+        print("model saved to {}".format(saved_to))  

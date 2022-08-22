@@ -146,7 +146,7 @@ if __name__ == '__main__' :
       predicted_label = []
       for line in Lines:
         filename = line.strip().split("\t")[0]
-        true_label.append(line.strip().split("\t")[1])
+        true_label.append(int(line.strip().split("\t")[1]))
         target_size = (configuration.get_image_height(), configuration.get_image_width())
         process_fun = imgproc.process_image
         image = process_fun(data.read_image(filename, configuration.get_number_of_channels()), target_size )

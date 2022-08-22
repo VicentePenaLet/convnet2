@@ -26,19 +26,19 @@ if __name__ == '__main__' :
     parser = argparse.ArgumentParser(description = "Train a simple mnist model")
     parser.add_argument("-config", type = str, help = "<str> configuration file", required = True)
     parser.add_argument("-name", type=str, help=" name of section in the configuration file", required = True)
-    parser.add_argument("-mode", type=str, choices=['train', 'test', 'predict'],  help=" train, test or predict", required = False, default = 'train')
+    parser.add_argument("-mode", type=str, choices=['train', 'test', 'predict', 'confussion'],  help=" train, test, predict or confussion", required = False, default = 'train')
     parser.add_argument("-save", type= bool,  help=" True to save the model", required = False, default = False)    
     pargs = parser.parse_args()     
     configuration_file = pargs.config
     configuration = conf.ConfigurationFile(configuration_file, pargs.name)                   
     if pargs.mode == 'train' :
         tfr_train_file = os.path.join(configuration.get_data_dir(), "train.tfrecords")
-    if pargs.mode == 'train' or  pargs.mode == 'test' or pargs.mode == "predict":    
+    if pargs.mode == 'train' or  pargs.mode == 'test' or pargs.mode == "predict" or pargs.mode == "confussion":    
         tfr_test_file = os.path.join(configuration.get_data_dir(), "test.tfrecords")
     if configuration.use_multithreads() :
         if pargs.mode == 'train' :
             tfr_train_file=[os.path.join(configuration.get_data_dir(), "train_{}.tfrecords".format(idx)) for idx in range(configuration.get_num_threads())]
-        if pargs.mode == 'train' or  pargs.mode == 'test' or pargs.mode == "predict":    
+        if pargs.mode == 'train' or  pargs.mode == 'test' or pargs.mode == "predict" or pargs.mode == "confussion":    
             tfr_test_file=[os.path.join(configuration.get_data_dir(), "test_{}.tfrecords".format(idx)) for idx in range(configuration.get_num_threads())]        
     sys.stdout.flush()
         
@@ -136,9 +136,36 @@ if __name__ == '__main__' :
             pred = pred / np.sum(pred)            
             cla = np.argmax(pred)
             print('{} [{}]'.format(cla, pred[cla]))
-            filename = input('file :')                                           
+            filename = input('file :')
+    elif pargs.mode == 'confussion':
+      from sklearn.metrics import confusion_matrix
+      print("Confussion")
+      file1 = open('/content/drive/MyDrive/Trees/data/test.txt', 'r')
+      Lines = file1.readlines()
+      true_label = []
+      predicted_label = []
+      for line in Lines:
+        filename = line.strip().split("\t")[0]
+        true_label.append(line.strip().split("\t")[1])
+        target_size = (configuration.get_image_height(), configuration.get_image_width())
+        process_fun = imgproc.process_image
+        image = process_fun(data.read_image(filename, configuration.get_number_of_channels()), target_size )
+        image = image - mean_image
+        image = tf.expand_dims(image, 0)        
+        pred = model.predict(image)
+        pred = pred[0]
+        #softmax to estimate probs
+        pred = np.exp(pred - max(pred))
+        pred = pred / np.sum(pred)            
+        cla = np.argmax(pred)
+        predicted_label.append(cla)
+        #print('{} [{}]'.format(cla, pred[cla]))
+      cfn = confusion_matrix(true_label, predicted_label)
+      print(cfn)
+               
+
     #save the model   
     if pargs.save :
         saved_to = os.path.join(configuration.get_data_dir(),"cnn-model")
         model.save(saved_to)
-        print("model saved to {}".format(saved_to))  
+        print("model saved to {}".format(saved_to))   

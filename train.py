@@ -161,7 +161,18 @@ if __name__ == '__main__' :
         predicted_label.append(cla)
         #print('{} [{}]'.format(cla, pred[cla]))
       cfn = confusion_matrix(true_label, predicted_label)
-      print(cfn)
+      import pandas as pd
+      import seaborn as sn
+      import matplotlib.pyplot as plt
+      file1 = open("/content/drive/MyDrive/Trees/data/used_labels.txt", 'r')
+      Lines = file1.readlines()
+      classes = []
+      for line in Lines:
+          classes.append(line.strip())
+      df_cfm = pd.DataFrame(cfn, index = classes, columns = classes)
+      plt.figure(figsize = (10,7))
+      cfm_plot = sn.heatmap(df_cfm, annot=True)
+      cfm_plot.figure.savefig("cfm.png")
                
 
     #save the model   

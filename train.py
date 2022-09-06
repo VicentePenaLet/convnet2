@@ -145,8 +145,9 @@ if __name__ == '__main__' :
       Lines = file1.readlines()
       true_label = []
       predicted_label = []
-      for line in Lines:
+     for line in Lines:
         filename = line.strip().split("\t")[0]
+        files.append(filename)
         true_label.append(int(line.strip().split("\t")[1]))
         target_size = (configuration.get_image_height(), configuration.get_image_width())
         process_fun = imgproc.process_image

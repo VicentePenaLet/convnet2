@@ -137,6 +137,7 @@ if __name__ == '__main__' :
             cla = np.argmax(pred)
             print('{} [{}]'.format(cla, pred[cla]))
             filename = input('file :')
+
     elif pargs.mode == 'confussion':
       from sklearn.metrics import confusion_matrix
       print("Confussion")
@@ -160,7 +161,10 @@ if __name__ == '__main__' :
         cla = np.argmax(pred)
         predicted_label.append(cla)
         #print('{} [{}]'.format(cla, pred[cla]))
+      f = pd.DataFrame(list(zip(true_label, predicted_label)) , columns =['True', 'Predicted'])
+      f.to_csv("test_results.csv")
       cfn = confusion_matrix(true_label, predicted_label)
+      cfn = cfn.astype('float') / cfn.sum(axis=1)[:, np.newaxis]
       import pandas as pd
       import seaborn as sn
       import matplotlib.pyplot as plt
@@ -170,11 +174,13 @@ if __name__ == '__main__' :
       for line in Lines:
           classes.append(line.strip())
       df_cfm = pd.DataFrame(cfn, index = classes, columns = classes)
+
       plt.figure(figsize = (10,7))
       cfm_plot = sn.heatmap(df_cfm, annot=True)
       cfm_plot.figure.savefig("cfm.png")
                
 
+      
     #save the model   
     if pargs.save :
         saved_to = os.path.join(configuration.get_data_dir(),"cnn-model")

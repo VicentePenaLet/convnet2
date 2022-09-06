@@ -161,11 +161,11 @@ if __name__ == '__main__' :
         cla = np.argmax(pred)
         predicted_label.append(cla)
         #print('{} [{}]'.format(cla, pred[cla]))
+      import pandas as pd
       f = pd.DataFrame(list(zip(true_label, predicted_label)) , columns =['True', 'Predicted'])
       f.to_csv("test_results.csv")
       cfn = confusion_matrix(true_label, predicted_label)
       cfn = cfn.astype('float') / cfn.sum(axis=1)[:, np.newaxis]
-      import pandas as pd
       import seaborn as sn
       import matplotlib.pyplot as plt
       file1 = open("/content/drive/MyDrive/Trees/data/used_labels.txt", 'r')

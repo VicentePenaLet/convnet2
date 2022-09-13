@@ -27,6 +27,11 @@ def crossentropy_l2_loss(model, weight_decay = 0):
         return ce + l2_loss
     return loss
 
+def focal_loss(y_true, y_pred):
+  fl = tfa.losses.SigmoidFocalCrossEntropy()
+  r = fl(y_true, y_pred)
+  return r
+
 #constrastive loss for triplet larning
 def triplet_loss(margin = 20):
     def loss(y_true, y_pred):

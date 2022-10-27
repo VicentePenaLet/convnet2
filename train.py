@@ -26,14 +26,14 @@ if __name__ == '__main__' :
     parser = argparse.ArgumentParser(description = "Train a simple mnist model")
     parser.add_argument("-config", type = str, help = "<str> configuration file", required = True)
     parser.add_argument("-name", type=str, help=" name of section in the configuration file", required = True)
-    parser.add_argument("-mode", type=str, choices=['train', 'test', 'predict', 'confussion'],  help=" train, test, predict or confussion", required = False, default = 'train')
+    parser.add_argument("-mode", type=str, choices=['train', 'test', 'predict', 'confussion', 'predictImages'],  help=" train, test, predict or confussion", required = False, default = 'train')
     parser.add_argument("-save", type= bool,  help=" True to save the model", required = False, default = False)    
     pargs = parser.parse_args()     
     configuration_file = pargs.config
     configuration = conf.ConfigurationFile(configuration_file, pargs.name)                   
     if pargs.mode == 'train' :
         tfr_train_file = os.path.join(configuration.get_data_dir(), "train.tfrecords")
-    if pargs.mode == 'train' or  pargs.mode == 'test' or pargs.mode == "predict" or pargs.mode == "confussion":    
+    if pargs.mode == 'train' or  pargs.mode == 'test' or pargs.mode == "predict" or pargs.mode == "confussion" or pargs.mode == "predictImages":    
         tfr_test_file = os.path.join(configuration.get_data_dir(), "test.tfrecords")
     if configuration.use_multithreads() :
         if pargs.mode == 'train' :
@@ -145,7 +145,8 @@ if __name__ == '__main__' :
       Lines = file1.readlines()
       true_label = []
       predicted_label = []
-     for line in Lines:
+      files = []
+      for line in Lines:
         filename = line.strip().split("\t")[0]
         files.append(filename)
         true_label.append(int(line.strip().split("\t")[1]))
@@ -166,6 +167,7 @@ if __name__ == '__main__' :
       f = pd.DataFrame(list(zip(true_label, predicted_label)) , columns =['True', 'Predicted'])
       f.to_csv("test_results.csv")
       cfn = confusion_matrix(true_label, predicted_label)
+      print(cfn)
       cfn = cfn.astype('float') / cfn.sum(axis=1)[:, np.newaxis]
       import seaborn as sn
       import matplotlib.pyplot as plt
@@ -180,8 +182,42 @@ if __name__ == '__main__' :
       cfm_plot = sn.heatmap(df_cfm, annot=True)
       cfm_plot.figure.savefig("cfm.png")
                
-
-      
+    elif pargs.mode == 'predictImages':
+      from IPython.display import Image
+      import matplotlib.pyplot as plt
+      import matplotlib.image as mpimg
+      print("predictImages")
+      file1 = open('/content/drive/MyDrive/Trees/data/test.txt', 'r')
+      Lines = file1.readlines()
+      true_label = []
+      predicted_label = []
+      files = []
+      file1 = open("/content/drive/MyDrive/Trees/data/used_labels.txt", 'r')
+      Lines1 = file1.readlines()
+      classes = []
+      for line in Lines1:
+          classes.append(line.strip())
+      for line in Lines:
+        filename = line.strip().split("\t")[0]
+        files.append(filename)
+        true_label.append(int(line.strip().split("\t")[1]))
+        target_size = (configuration.get_image_height(), configuration.get_image_width())
+        process_fun = imgproc.process_image
+        image = process_fun(data.read_image(filename, configuration.get_number_of_channels()), target_size )
+        image = image - mean_image
+        image = tf.expand_dims(image, 0)        
+        pred = model.predict(image)
+        pred = pred[0]
+        #softmax to estimate probs
+        pred = np.exp(pred - max(pred))
+        pred = pred / np.sum(pred)            
+        cla = np.argmax(pred)
+        predicted_label.append(cla)
+        #print('{} [{}]'.format(cla, pred[cla]))
+        tru = int(line.strip().split("\t")[1])
+        if tru != cla:
+          with open('/content/drive/MyDrive/Trees/data/results', "a") as f:
+            f.write(filename + " "+str(tru) +" "+ classes[tru] + " "+str(cla) + " "+classes [cla] +"\n")
     #save the model   
     if pargs.save :
         saved_to = os.path.join(configuration.get_data_dir(),"cnn-model")

@@ -115,7 +115,15 @@ if __name__ == '__main__' :
                         validation_data=val_dataset,
                         validation_steps = configuration.get_validation_steps(),
                         callbacks=[model_checkpoint_callback])
-                
+        import matplotlib.pyplot as plt
+        plt.plot(history.history['acc'])
+        plt.plot(history.history['val_acc'])
+        plt.title('model accuracy')
+        plt.ylabel('accuracy')
+        plt.xlabel('epoch')
+        plt.legend(['train', 'val'], loc='upper left')
+        plt.savefig('train_graph.svg')
+        
     elif pargs.mode == 'test' :
         model.evaluate(val_dataset,
                        steps = configuration.get_validation_steps(),
@@ -180,7 +188,7 @@ if __name__ == '__main__' :
 
       plt.figure(figsize = (10,7))
       cfm_plot = sn.heatmap(df_cfm, annot=True)
-      cfm_plot.figure.savefig("cfm.png")
+      cfm_plot.figure.savefig("cfm.svg")
                
     elif pargs.mode == 'predictImages':
       from IPython.display import Image

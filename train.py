@@ -116,14 +116,15 @@ if __name__ == '__main__' :
                         validation_steps = configuration.get_validation_steps(),
                         callbacks=[model_checkpoint_callback])
         import matplotlib.pyplot as plt
-        plt.plot(history.history['acc'])
-        plt.plot(history.history['val_acc'])
+        print(history.history.keys())
+        plt.plot(history.history['accuracy'])
+        plt.plot(history.history['val_accuracy'])
         plt.title('model accuracy')
         plt.ylabel('accuracy')
         plt.xlabel('epoch')
         plt.legend(['train', 'val'], loc='upper left')
         plt.savefig('train_graph.svg')
-        
+
     elif pargs.mode == 'test' :
         model.evaluate(val_dataset,
                        steps = configuration.get_validation_steps(),
@@ -230,4 +231,4 @@ if __name__ == '__main__' :
     if pargs.save :
         saved_to = os.path.join(configuration.get_data_dir(),"cnn-model")
         model.save(saved_to)
-        print("model saved to {}".format(saved_to))   
+        print("model saved to {}".format(saved_to))  
